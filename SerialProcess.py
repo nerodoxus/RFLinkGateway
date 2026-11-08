@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import time
 import json
+import os
 
 import serial
 import Processors
@@ -56,6 +57,7 @@ class SerialProcess(multiprocessing.Process):
         self.output_params_processing = config['rflink_output_params_processing']
         self.ignored_devices = config['rflink_ignored_devices']
         self.logger.info("Ignoring devices: %s", self.ignored_devices)
+        self.reconnect_delay = int(os.getenv('RFLINK_RECONNECT_DELAY', '30'))
 
 
         if 'rflink_tty_device' in config:            
@@ -204,7 +206,7 @@ class SerialProcess(multiprocessing.Process):
                 self.logger.debug('Serial connection established')
             except Exception as e:
                 self.logger.error('Serial port is closed %s' % (e))
-                time.sleep(5)
+                time.sleep(self.reconnect_delay)
 
     def connect_uri(self):
         self.logger.info('Connecting to URI')
@@ -214,7 +216,21 @@ class SerialProcess(multiprocessing.Process):
                 self.logger.debug('URI connection established')
             except Exception as e:
                 self.logger.error('URI is closed %s' % (e))
-                time.sleep(5)
+                time.sleep(self.reconnect_delay)
+
+    def reconnect(self):
+        # Close the stale port first, otherwise isOpen() stays True, connect()
+        # returns at once and a lost device turns into a tight error loop.
+        try:
+            self.sp.close()
+        except Exception as e:
+            self.logger.debug('Closing serial port failed: %s' % (e))
+        self.logger.info('Reconnecting in %d s' % (self.reconnect_delay))
+        time.sleep(self.reconnect_delay)
+        if hasattr(self, 'gateway_port'):
+            self.connect()
+        else:
+            self.connect_uri()
 
     def run(self):
         self.sp.flushInput()
@@ -240,4 +256,4 @@ class SerialProcess(multiprocessing.Process):
                     time.sleep(0.01)
             except Exception as e:
                 self.logger.error('Error received: %s' % (e))
-                self.connect()
+                self.reconnect()
