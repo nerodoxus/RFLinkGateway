@@ -170,3 +170,25 @@ It is now possible to send Special Control Command (aka SCC) (ex. 10;PING) to $m
 
 - RFLink Gateway project http://www.nemcon.nl/blog2/
 - RFLink Gateway protocol http://www.nemcon.nl/blog2/protref
+
+## Fork notes (nerodoxus)
+
+Changes in this fork:
+
+- **Serial reconnect fix.** When the RFLink device disappears (USB unplugged, I/O error), the original code called
+  `connect()` while the stale port still reported `isOpen() == True`, so it returned immediately and `run()` hit the
+  same error again. The result was a tight loop that wrote thousands of log lines per second (24 GB of Docker log
+  in our case) and never recovered when the device came back. `run()` now closes the port, waits and reconnects.
+  The delay is set with `RFLINK_RECONNECT_DELAY` (seconds, default 30) and is also used between failed open attempts.
+- **Docker files** (`Dockerfile`, `docker-compose.yml`) are included here, so the image builds from this repository
+  without cloning anything else.
+
+### Run with Docker Compose
+
+```sh
+cp config.json config.local.json   # then set your MQTT broker, credentials and rflink_tty_device
+echo "RFLINK_TTY=/dev/ttyACM0" > .env   # only if your device is not /dev/ttyUSB0
+docker compose up -d --build
+```
+
+Docker log rotation is enabled (10 MB x 3 files), so a misbehaving device cannot fill the disk.

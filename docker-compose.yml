@@ -1,0 +1,20 @@
+services:
+  rflinkgateway:
+    container_name: rflinkgateway
+    build: .
+    image: rflinkgateway:local
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # Real config with MQTT credentials, kept out of git (see .gitignore)
+      - ./config.local.json:/config/config.json:ro
+      - /var/log:/log
+    devices:
+      - ${RFLINK_TTY:-/dev/ttyUSB0}:${RFLINK_TTY:-/dev/ttyUSB0}
+    environment:
+      - RFLINK_RECONNECT_DELAY=30
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

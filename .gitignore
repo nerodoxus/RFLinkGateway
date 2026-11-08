@@ -4,3 +4,6 @@
 .idea/RFLinkGateway.iml
 .idea/vcs.xml
 .idea/workspace.xml
+config.local.json
+.env
+__pycache__/
