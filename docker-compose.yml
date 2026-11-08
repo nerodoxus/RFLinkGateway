@@ -13,6 +13,8 @@ services:
       - ${RFLINK_TTY:-/dev/ttyUSB0}:${RFLINK_TTY:-/dev/ttyUSB0}
     environment:
       - RFLINK_RECONNECT_DELAY=30
+      # Must be unique per gateway on the same broker
+      - RFLINK_MQTT_CLIENT_ID=${RFLINK_MQTT_CLIENT_ID:-}
     logging:
       driver: json-file
       options:

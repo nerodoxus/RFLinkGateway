@@ -182,12 +182,15 @@ Changes in this fork:
   The delay is set with `RFLINK_RECONNECT_DELAY` (seconds, default 30) and is also used between failed open attempts.
 - **Docker files** (`Dockerfile`, `docker-compose.yml`) are included here, so the image builds from this repository
   without cloning anything else.
+- **Unique MQTT client ID.** The client ID was hard-coded to `RFLinkGateway`, so two gateways on one broker kept
+  disconnecting each other. It now comes from `RFLINK_MQTT_CLIENT_ID`, defaulting to `RFLinkGateway-<hostname>`.
 
 ### Run with Docker Compose
 
 ```sh
 cp config.json config.local.json   # then set your MQTT broker, credentials and rflink_tty_device
-echo "RFLINK_TTY=/dev/ttyACM0" > .env   # only if your device is not /dev/ttyUSB0
+echo "RFLINK_TTY=/dev/ttyACM0" >> .env   # only if your device is not /dev/ttyUSB0
+echo "RFLINK_MQTT_CLIENT_ID=RFLinkGateway-$(hostname)" >> .env   # unique per gateway
 docker compose up -d --build
 ```
 

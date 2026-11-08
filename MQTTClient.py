@@ -1,5 +1,7 @@
 import logging
 import multiprocessing
+import os
+import socket
 import time
 
 import paho.mqtt.client as mqtt
@@ -21,7 +23,10 @@ class MQTTClient(multiprocessing.Process):
         self.port = config['mqtt_port']
 
         self.mqtt_data_prefix = config['mqtt_prefix']
-        self._mqttConn = mqtt.Client(client_id='RFLinkGateway')
+        # A fixed client ID makes two gateways on one broker kick each other off
+        client_id = os.getenv('RFLINK_MQTT_CLIENT_ID') or 'RFLinkGateway-%s' % socket.gethostname()
+        self.logger.info("MQTT client ID: %s", client_id)
+        self._mqttConn = mqtt.Client(client_id=client_id)
         if 'mqtt_user' in config and config['mqtt_user'] is not None:
             self.logger.info("Connection with credentials (user: %s).", config['mqtt_user'])
             self._mqttConn.username_pw_set(username=config['mqtt_user'], password=config['mqtt_password'])
